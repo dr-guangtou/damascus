@@ -8,6 +8,10 @@ from astropy.io import fits
 
 from . import io
 
+__all__ = ['filter_hsc_fdfc_mask']
+
+HSC_ZP = 27.0  # Zeropoint for HSC survey
+
 def filter_hsc_fdfc_mask(cat, fdfc_mask, ra='RA', dec='DEC', verbose=True):
     """Filter a catalog through HSC FDFC mask."""
     # Read the fits catalog if input is path to the file

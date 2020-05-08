@@ -7,6 +7,8 @@ import numpy as np
 
 import healpy
 
+__all__ = ['read_healpix_fits', 'find_files']
+
 def read_healpix_fits(fits_file, nest=True):
     """Read the FITS format healpix file."""
     return healpy.read_map(fits_file, nest=nest, dtype=np.bool)
