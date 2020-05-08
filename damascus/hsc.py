@@ -2,37 +2,31 @@
 
 import numpy as np
 
-def filter_healpix_mask(mask, catalog, ra='ra', dec='dec', verbose=True):
-    """Filter a catalog through a Healpix mask.
+import healpy
 
-    Parameters
-    ----------
-    mask : healpy mask data
-        healpy mask data
-    catalog : numpy array or astropy.table
-        Catalog that includes the coordinate information
-    ra : string
-        Name of the column for R.A.
-    dec : string
-        Name of the column for Dec.
-    verbose : boolen, optional
-        Default: True
+from astropy.io import fits
 
-    Return
-    ------
-        Selected objects that are covered by the mask.
-    """
-    import healpy
+from . import io
 
-    nside, hp_indices = healpy.get_nside(mask), np.where(mask)[0]
+def filter_hsc_fdfc_mask(cat, fdfc_mask, ra='RA', dec='DEC', verbose=True):
+    """Filter a catalog through HSC FDFC mask."""
+    # Read the fits catalog if input is path to the file
+    if isinstance(cat, str):
+        cat = fits.open(cat, memmap=True)[1].data
 
-    phi, theta = np.radians(catalog[ra]), np.radians(90. - catalog[dec])
+    # Read the healpix mask if input is path to the file
+    if isinstance(fdfc_mask, str):
+        fdfc_mask = io.read_healpix_fits(fdfc_mask)
 
+    # Find the matched objects
+    nside, hp_indices = healpy.get_nside(fdfc_mask), np.where(fdfc_mask)[0]
+    phi, theta = np.radians(cat[ra]), np.radians(90. - cat[dec])
     hp_masked = healpy.ang2pix(nside, theta, phi, nest=True)
-
     select = np.in1d(hp_masked, hp_indices)
 
     if verbose:
-        print("# %d/%d objects are selected by the mask" % (select.sum(), len(catalog)))
+        print("# Find {:d} objects inside the FDFC region".format(select.sum()))
 
-    return catalog[select]
+    if select.sum() < 1:
+        return None
+    return cat[select]
