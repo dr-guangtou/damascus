@@ -1,3 +1,5 @@
+# Licensed under MIT license - see LICENSE.rst
+# -*- coding: utf-8 -*-
 """Utility functions."""
 
 import numpy as np
