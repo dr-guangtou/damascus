@@ -94,6 +94,7 @@ def _stitch_boundaries(edges):
     -----
         From a StackOverflow answer by Iddo Hanniel:
         https://stackoverflow.com/questions/50549128/boundary-enclosing-a-given-set-of-points
+
     """
     edge_set = edges.copy()
     boundary_lst = []
