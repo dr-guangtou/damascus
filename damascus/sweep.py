@@ -25,18 +25,18 @@ def sweep_to_box(sweep_name):
 
     Parameters
     ----------
-    sweep_name: string
+    sweep_name: `string`
         Path or the file name of the Sweep catalog.
 
     Returns
     -------
-    box: np.array
+    box: `np.array`
         An array of the coordinates of the four corners of the box.
 
     '''
     # Extract the RA, Dec ranges of the Sweep file
     radec_str = os.path.splitext(
-        os.path.split(sweep_name)[1])[0].replace('sweep-', '').split('-')
+        os.path.split(sweep_name)[-1])[0].replace('sweep-', '').split('-')
 
     # Get the minimum and maximum RA & Dec
     ra_min = float(radec_str[0][0:3])
@@ -71,17 +71,155 @@ class SweepCatalog(object):
     -----
 
     '''
-    def __init__(self, catalog):
+    def __init__(self, catalog, read_in=False):
         '''Initialize a SweepCatalog object.
 
         Parameters
         ----------
-        catalog: str
-             Path to the FITS format sweep catalog.
+        catalog: `str`
+            Path to the FITS format sweep catalog.
+        read_in: `bool`
+            Read in the catalog immediately.
 
         Notes
         -----
             Will try to read the catalog using `astropy.fits` in `memap=True` mode.
 
         '''
+        self._catalog_path = catalog
+        self._catalog_name = os.path.split(catalog)[-1]
+        assert os.path.isfile(catalog), FileNotFoundError("Cannot find the sweep catalog!")
 
+        # Get the RA, Dec coordinates of the vertices
+        self._vertices = sweep_to_box(self._catalog_name)
+
+        # Open the FITS file
+        self._hdu_list = self.open()
+        self.header = self._hdu_list[1].header
+        self._columns = self._get_columns()
+
+        # Read the catalog data.
+        self.data = self.load() if read_in else None
+
+    def __repr__(self):
+        return "Sweep Catalog: {0._catalog_name:s}".format(self)
+
+    def open(self):
+        ''' Open the FITS file as a HUDList.
+        '''
+        return fits.open(self._catalog_path, memmap=True)
+
+    def load(self):
+        ''' Read in the FITS catalog as FITS record.
+        '''
+        return self._hdu_list[1].data
+
+    def close(self):
+        ''' Close the HDUList of the FITS file.
+        '''
+        self._hdu_list.close()
+
+    def _get_columns(self):
+        ''' Get the columns names of the Sweep catalog.
+        '''
+        cards = np.asarray(self.header.cards)[:, 0]
+        return [self.header[key] for key in cards[
+            np.asarray(['TTYPE' in card for card in cards])]]
+
+    def has_column(self, col):
+        ''' Check whether the catalog has certain column.
+
+        Parameters
+        ----------
+        col: `string`
+            Name of the column to check.
+
+        Returns
+        -------
+        has_column: `bool`
+            Whether the column is in the catalog or not.
+
+        '''
+        return col.upper().strip() in self.columns
+
+    def cover(self, ra, dec):
+        ''' Find out is the object covered or how many objects are covered in this sweep.
+
+        Parameters
+        ----------
+        ra: `float` or `np.array`
+             RA of the object or array of RA of the sample.
+        dec: `float` or `np.array`
+             Dec of the object or array of Dec of the sample.
+
+        Returns
+        -------
+        result: `bool`
+             Whether the object is covered, or a boolen mask for overlapped objects.
+
+        '''
+        if not np.isscalar(ra):
+            assert len(ra) == len(dec), "RA & Dec array should have the same size."
+
+        return ((ra >= self.ra_min) & (ra < self.ra_max) &
+                (dec >= self.dec_min) & (dec < self.dec_max))
+
+    @property
+    def path(self):
+        '''Path to the Sweep catalog.
+        '''
+        return self._catalog_path
+
+    @property
+    def name(self):
+        '''Get the file name of the Sweep catalog.
+        '''
+        return self._catalog_name
+
+    @property
+    def vertices(self):
+        '''Get the RA, Dec coordinates of the vertices.
+        '''
+        return self._vertices
+
+    @property
+    def ra_min(self):
+        '''Get the minimum RA.
+        '''
+        return self._vertices.min(axis=0)[0]
+
+    @property
+    def ra_max(self):
+        '''Get the minimum RA.
+        '''
+        return self._vertices.max(axis=0)[0]
+
+    @property
+    def dec_min(self):
+        '''Get the minimum Dec.
+        '''
+        return self._vertices.min(axis=0)[1]
+
+    @property
+    def dec_max(self):
+        '''Get the minimum Dec.
+        '''
+        return self._vertices.max(axis=0)[1]
+
+    @property
+    def ra_range(self):
+        '''Get the range of RA of the sweep catalog.
+        '''
+        return [self.ra_min, self.ra_max]
+
+    @property
+    def dec_range(self):
+        '''Get the range of Dec of the sweep catalog.
+        '''
+        return [self.dec_min, self.dec_max]
+
+    @property
+    def columns(self):
+        '''Get the list of column names of the catalog.
+        '''
+        return self._columns
