@@ -21,20 +21,19 @@ __all__ = ['sweep_to_box', 'SweepCatalog']
 
 
 def sweep_to_box(sweep_name):
-    '''Decode the Sweep catalog name into (RA, Dec) range. 
-    
+    '''Decode the Sweep catalog name into (RA, Dec) range.
+
     Parameters
-    ---------- 
+    ----------
     sweep_name: string
         Path or the file name of the Sweep catalog.
-    
+
     Returns
     -------
     box: np.array
         An array of the coordinates of the four corners of the box.
-    
-    ''' 
-    """Decode the name of the Sweep file into box of coordinates."""
+
+    '''
     # Extract the RA, Dec ranges of the Sweep file
     radec_str = os.path.splitext(
         os.path.split(sweep_name)[1])[0].replace('sweep-', '').split('-')
