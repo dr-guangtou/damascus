@@ -5,8 +5,27 @@
 import numpy as np
 
 from scipy.spatial import Delaunay
+from scipy.spatial import ConvexHull
 
-__all__ = ['alpha_shape']
+__all__ = ['alpha_shape', 'concave_hull']
+
+
+def concave_hull(points):
+    ''' Get the concave hull edges for a set of points.
+
+    Parameters
+    ----------
+    points: `np.array` of shape (n,2) points
+         Coordinates of the points.
+
+    Returns
+    -------
+    edges: `np.array` of shape (n,2) points
+        List of indices for boundary points.
+
+    '''
+    hull = ConvexHull(points)
+    return np.vstack([points[hull.vertices, 0], points[hull.vertices, 1]]).T
 
 
 def alpha_shape(points, alpha, only_outer=True):

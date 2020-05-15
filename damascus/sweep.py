@@ -12,6 +12,7 @@ Please see:
 """
 
 import os
+import copy
 
 import numpy as np
 
@@ -53,11 +54,6 @@ def sweep_to_box(sweep_name):
 class SweepCatalog(object):
     '''A class to deal with DECaLS sweep catalog
 
-    Parameters
-    ----------
-    input: `int`
-         description
-
     Attributes
     ----------
     attrib1
@@ -65,7 +61,6 @@ class SweepCatalog(object):
 
     Examples
     --------
-
 
     Notes
     -----
@@ -99,7 +94,9 @@ class SweepCatalog(object):
         self._columns = self._get_columns()
 
         # Read the catalog data.
-        self.data = self.load() if read_in else None
+        self.data = None
+        if read_in:
+            self.load()
 
     def __repr__(self):
         return "Sweep Catalog: {0._catalog_name:s}".format(self)
@@ -112,7 +109,7 @@ class SweepCatalog(object):
     def load(self):
         ''' Read in the FITS catalog as FITS record.
         '''
-        return self._hdu_list[1].data
+        self.data = self._hdu_list[1].data
 
     def close(self):
         ''' Close the HDUList of the FITS file.
@@ -141,6 +138,30 @@ class SweepCatalog(object):
 
         '''
         return col.upper().strip() in self.columns
+
+    def demography(self):
+        ''' Show the demography of different types of objects in the catalog.
+        '''
+        if self.data is None:
+            self.load()
+        print("# There are {:d} objects in the catalog".format(len(self.data)))
+
+
+    def select(self):
+        ''' Select a sub-sample of objects according to certain rule.
+
+        Parameters
+        ----------
+        param1: `int`
+             description
+
+        Returns
+        -------
+        result: `bool`
+            description
+
+        '''
+        return
 
     def cover(self, ra, dec):
         ''' Find out is the object covered or how many objects are covered in this sweep.
