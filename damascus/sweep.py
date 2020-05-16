@@ -149,7 +149,9 @@ class SweepCatalog(object):
         if self.data is None:
             self.load()
         print("# There are {:d} objects in the catalog".format(len(self.data)))
-
+        for obj_type in self.types:
+            print("# {:s}: {:d}".format(
+                obj_type, self.select('TYPE', '==', obj_type, only_number=True)))
 
     def select(self, col, oper, value, verbose=False, only_number=False):
         ''' Select a sub-sample of objects according to certain rule.
@@ -262,12 +264,12 @@ class SweepCatalog(object):
         '''Get the list of column names of the catalog.
         '''
         return self._columns
-    
+
     @property
     def types(self):
         '''Show the unique object types in this catalog.
         '''
-        if not self.data:
+        if self.data is None:
             print("Please load the catalog data in first...")
             return None
         return np.unique(self.data['TYPE'])
