@@ -13,6 +13,7 @@ Please see:
 
 import os
 import copy
+import operator
 
 import numpy as np
 
@@ -98,6 +99,9 @@ class SweepCatalog(object):
         if read_in:
             self.load()
 
+        # Placeholder for selected objects
+        self.data_use = None
+
     def __repr__(self):
         return "Sweep Catalog: {0._catalog_name:s}".format(self)
 
@@ -147,7 +151,7 @@ class SweepCatalog(object):
         print("# There are {:d} objects in the catalog".format(len(self.data)))
 
 
-    def select(self):
+    def select(self, col, oper, value, verbose=False, only_number=False):
         ''' Select a sub-sample of objects according to certain rule.
 
         Parameters
@@ -161,7 +165,21 @@ class SweepCatalog(object):
             description
 
         '''
-        return
+        # Check to make sure the column is available
+        col = col.upper().strip()
+        assert col in self._columns, KeyError("Wrong column name!")
+
+        opers_dict = {
+            '>': operator.gt, '<': operator.lt,
+            '>=': operator.ge, '<=': operator.le,
+            '==': operator.eq, '!=': operator.ne}
+        mask = opers_dict[oper.strip()](self.data[col], value)
+        if verbose:
+            print("{:s} {:s} {:s} selects {:d} objects".format(col, oper, value, mask.sum()))
+        if only_number:
+            return mask.sum()
+
+        self.data_use = copy.deepcopy(self.data)[mask]
 
     def cover(self, ra, dec):
         ''' Find out is the object covered or how many objects are covered in this sweep.
@@ -244,3 +262,12 @@ class SweepCatalog(object):
         '''Get the list of column names of the catalog.
         '''
         return self._columns
+    
+    @property
+    def types(self):
+        '''Show the unique object types in this catalog.
+        '''
+        if not self.data:
+            print("Please load the catalog data in first...")
+            return None
+        return np.unique(self.data['TYPE'])
