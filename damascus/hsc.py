@@ -54,7 +54,7 @@ def filter_hsc_fdfc_mask(cat, fdfc_mask, ra='RA', dec='DEC', nest=True, verbose=
 
     # Read the healpix mask if input is path to the file
     if isinstance(fdfc_mask, str):
-        fdfc_mask = io.read_healpix_fits(fdfc_mask)
+        fdfc_mask = io.read_healpix_fits(fdfc_mask, nest=nest)
 
     # Find the matched objects
     nside, hp_indices = hp.get_nside(fdfc_mask), np.where(fdfc_mask)[0]

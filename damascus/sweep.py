@@ -19,6 +19,8 @@ import numpy as np
 
 from astropy.io import fits
 
+from . import hsc
+
 __all__ = ['sweep_to_box', 'SweepCatalog']
 
 
@@ -96,6 +98,8 @@ class SweepCatalog(object):
 
         # Read the catalog data.
         self.data = None
+        self.obj_ra_range = None
+        self.obj_dec_range = None
         if read_in:
             self.load()
 
@@ -114,6 +118,8 @@ class SweepCatalog(object):
         ''' Read in the FITS catalog as FITS record.
         '''
         self.data = self._hdu_list[1].data
+        self.obj_ra_range = [self.data['RA'].min(), self.data['RA'].max()]
+        self.obj_dec_range = [self.data['DEC'].min(), self.data['DEC'].max()]
 
     def close(self):
         ''' Close the HDUList of the FITS file.
@@ -158,13 +164,21 @@ class SweepCatalog(object):
 
         Parameters
         ----------
-        param1: `int`
-             description
+        col: `string`
+            Name of the column used for selection.
+        oper: `string`
+            String representation of the operator. Allowed ones include
+            `[">", "<", ">=", "<=", "==", "!=']`
+        value:
+            Selection criteria.
+        verbose: `boolen`, optional
+            Show the number of selected objectss. Default: False
+        only_number: `boolen`, optional
+            Only return the number of selected objects.
 
-        Returns
-        -------
-        result: `bool`
-            description
+        Note
+        ----
+            Will update the `self.data_use` attribute when `only_number=False`.
 
         '''
         # Check to make sure the column is available
@@ -204,6 +218,31 @@ class SweepCatalog(object):
 
         return ((ra >= self.ra_min) & (ra < self.ra_max) &
                 (dec >= self.dec_min) & (dec < self.dec_max))
+
+    def healpix_mask(self, mask_file, nest=True, verbose=False):
+        '''Match the catalog to a Healpix mask.
+
+        Parameters
+        ----------
+        mask_file: `string`
+            Path to the FITS format Healpix mask file.
+
+        Returns
+        -------
+        matched: `np.recarray`
+            Numpy array for the matched objects.
+        nest: bool, optional
+            If True, assume NESTED pixel ordering, otherwise, RING pixel ordering.
+            Default: True
+        verbose: bool, optional
+            Annouce progress. Default: False
+
+        '''
+        if self.data_use is None:
+            return hsc.filter_hsc_fdfc_mask(
+                self.data, mask_file, ra='RA', dec='DEC', nest=nest, verbose=verbose)
+        return hsc.filter_hsc_fdfc_mask(
+            self.data_use, mask_file, ra='RA', dec='DEC', nest=nest, verbose=verbose)
 
     @property
     def path(self):
