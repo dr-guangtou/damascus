@@ -165,7 +165,8 @@ class SweepCatalog(object):
             print("# {:s}: {:d}".format(
                 obj_type, self.select('TYPE', '==', obj_type, only_number=True)))
 
-    def select(self, col, oper, value, verbose=False, only_number=False):
+    def select(self, col, oper, value, update=True, verbose=False, only_mask=False,
+               only_number=False):
         ''' Select a sub-sample of objects according to certain rule.
 
         Parameters
@@ -181,6 +182,11 @@ class SweepCatalog(object):
             Show the number of selected objectss. Default: False
         only_number: `boolen`, optional
             Only return the number of selected objects.
+        only_number: `boolen`, optional
+            Only return the object mask.
+        update: `boolen`, optional
+            If `True`, will update the `data_use` attribute in new selection.
+            Otherwise will start again from the original `data`.
 
         Note
         ----
@@ -195,13 +201,20 @@ class SweepCatalog(object):
             '>': operator.gt, '<': operator.lt,
             '>=': operator.ge, '<=': operator.le,
             '==': operator.eq, '!=': operator.ne}
-        mask = opers_dict[oper.strip()](self.data[col], value)
+        if self.data_use is None or not update:
+            mask = opers_dict[oper.strip()](self.data[col], value)
+        else:
+            mask = opers_dict[oper.strip()](self.data_use[col], value)
+
+        if only_mask:
+            return mask
+
         if verbose:
-            print("{:s} {:s} {:s} selects {:d} objects".format(col, oper, value, mask.sum()))
+            print("{:s} {:s} {:s} selects {:d} objects".format(col, oper, str(value), mask.sum()))
         if only_number:
             return mask.sum()
 
-        if self.data_use is None:
+        if self.data_use is None or not update:
             self.data_use = copy.deepcopy(self.data)[mask]
         else:
             self.data_use = self.data_use[mask]
