@@ -13,6 +13,7 @@ Please see:
 
 import os
 import copy
+import random
 import operator
 
 import numpy as np
@@ -20,6 +21,7 @@ import numpy as np
 from astropy.io import fits
 
 from . import hsc
+from . import shape
 
 __all__ = ['sweep_to_box', 'SweepCatalog']
 
@@ -243,6 +245,40 @@ class SweepCatalog(object):
                 self.data, mask_file, ra='RA', dec='DEC', nest=nest, verbose=verbose)
         return hsc.filter_hsc_fdfc_mask(
             self.data_use, mask_file, ra='RA', dec='DEC', nest=nest, verbose=verbose)
+
+    def convex_hull(self):
+        '''Get the convex hull of the object distribution.
+        '''
+        if self.data_use is None:
+            if self.data is None:
+                self.load()
+            return shape.convex_hull(
+                np.vstack([self.data['RA'], self.data['DEC']]).T)
+        return shape.convex_hull(
+            np.vstack([self.data_use['RA'], self.data_use['DEC']]).T)
+
+    def concave_hull(self, alpha=0.1, n_samples=10000):
+        '''Get the concave hull of the object distribution.
+
+        Note
+        ----
+            This is not perfect yet. Since we need to use random points, the
+            accuracy is not always great.
+
+        '''
+        if self.data_use is None:
+            if self.data is None:
+                self.load()
+            points = np.vstack([self.data['RA'], self.data['DEC']]).T
+        else:
+            points = np.vstack([self.data_use['RA'], self.data_use['DEC']]).T
+
+        if len(points) <= n_samples:
+            points_use = points
+        else:
+            points_use = np.asarray(random.choices(points, k=n_samples))
+
+        return shape.concave_hull(points_use, alpha=alpha)
 
     @property
     def path(self):

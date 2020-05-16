@@ -7,11 +7,11 @@ import numpy as np
 from scipy.spatial import Delaunay
 from scipy.spatial import ConvexHull
 
-__all__ = ['alpha_shape', 'concave_hull']
+__all__ = ['alpha_shape', 'convex_hull', 'concave_hull']
 
 
-def concave_hull(points):
-    ''' Get the concave hull edges for a set of points.
+def convex_hull(points):
+    ''' Get the convex hull edges for a set of points.
 
     Parameters
     ----------
@@ -26,6 +26,24 @@ def concave_hull(points):
     '''
     hull = ConvexHull(points)
     return np.vstack([points[hull.vertices, 0], points[hull.vertices, 1]]).T
+
+
+def concave_hull(points, **kwargs):
+    ''' Get the concave hull edges for a set of points.
+
+    Parameters
+    ----------
+    points: `np.array` of shape (n,2) points
+         Coordinates of the points.
+
+    Returns
+    -------
+    edges: `np.array` of shape (n,2) points
+        List of indices for boundary points.
+
+    '''
+    edges = np.asarray(alpha_shape(points, **kwargs)[0])
+    return np.vstack([points[edges[:, 0], 0], points[edges[:, 1], 1]]).T
 
 
 def alpha_shape(points, alpha, only_outer=True):
