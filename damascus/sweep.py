@@ -201,7 +201,10 @@ class SweepCatalog(object):
         if only_number:
             return mask.sum()
 
-        self.data_use = copy.deepcopy(self.data)[mask]
+        if self.data_use is None:
+            self.data_use = copy.deepcopy(self.data)[mask]
+        else:
+            self.data_use = self.data_use[mask]
 
     def cover(self, ra, dec, in_convex=False, in_concave=False):
         ''' Find out is the object covered or how many objects are covered in this sweep.
