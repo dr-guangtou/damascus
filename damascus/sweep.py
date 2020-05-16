@@ -18,6 +18,8 @@ import operator
 
 import numpy as np
 
+from matplotlib import path
+
 from astropy.io import fits
 
 from . import hsc
@@ -107,6 +109,8 @@ class SweepCatalog(object):
 
         # Placeholder for selected objects
         self.data_use = None
+        self.obj_concave = None
+        self.obj_convex = None
 
     def __repr__(self):
         return "Sweep Catalog: {0._catalog_name:s}".format(self)
@@ -199,15 +203,21 @@ class SweepCatalog(object):
 
         self.data_use = copy.deepcopy(self.data)[mask]
 
-    def cover(self, ra, dec):
+    def cover(self, ra, dec, in_convex=False, in_concave=False):
         ''' Find out is the object covered or how many objects are covered in this sweep.
 
         Parameters
         ----------
         ra: `float` or `np.array`
-             RA of the object or array of RA of the sample.
+            RA of the object or array of RA of the sample.
         dec: `float` or `np.array`
-             Dec of the object or array of Dec of the sample.
+            Dec of the object or array of Dec of the sample.
+        in_convex: `boolen`,  optional
+            Use the convex hull of the actually object distribution.
+            Default: False
+        in_concave: `boolen`, optional
+            Use the concave hull of the actually object distribution.
+            Default: False
 
         Returns
         -------
@@ -218,8 +228,29 @@ class SweepCatalog(object):
         if not np.isscalar(ra):
             assert len(ra) == len(dec), "RA & Dec array should have the same size."
 
-        return ((ra >= self.ra_min) & (ra < self.ra_max) &
-                (dec >= self.dec_min) & (dec < self.dec_max))
+        if not in_concave and not in_convex:
+            return ((ra >= self.ra_min) & (ra < self.ra_max) &
+                    (dec >= self.dec_min) & (dec < self.dec_max))
+        elif in_convex:
+            if self.obj_convex is None:
+                convex = path.Path(self.convex_hull())
+            else:
+                convex = path.Path(self.obj_convex)
+            if np.isscalar(ra):
+                return convex.contains_point([ra, dec])
+            else:
+                return convex.contains_points(np.vstack([ra, dec]).T)
+        elif in_concave:
+            if self.obj_concave is None:
+                concave = path.Path(self.concave_hull())
+            else:
+                concave = path.Path(self.obj_concave)
+            if np.isscalar(ra):
+                return concave.contains_point([ra, dec])
+            else:
+                return concave.contains_points(np.vstack([ra, dec]).T)
+        else:
+            raise Exception("You should only set either in_concave or in_convex = True")
 
     def healpix_mask(self, mask_file, nest=True, verbose=False):
         '''Match the catalog to a Healpix mask.
@@ -249,13 +280,11 @@ class SweepCatalog(object):
     def convex_hull(self):
         '''Get the convex hull of the object distribution.
         '''
-        if self.data_use is None:
-            if self.data is None:
-                self.load()
-            return shape.convex_hull(
-                np.vstack([self.data['RA'], self.data['DEC']]).T)
-        return shape.convex_hull(
-            np.vstack([self.data_use['RA'], self.data_use['DEC']]).T)
+        if self.data is None:
+            self.load()
+        self.obj_convex = shape.convex_hull(
+            np.vstack([self.data['RA'], self.data['DEC']]).T)
+        return self.obj_convex
 
     def concave_hull(self, alpha=0.1, n_samples=10000):
         '''Get the concave hull of the object distribution.
@@ -266,19 +295,17 @@ class SweepCatalog(object):
             accuracy is not always great.
 
         '''
-        if self.data_use is None:
-            if self.data is None:
-                self.load()
-            points = np.vstack([self.data['RA'], self.data['DEC']]).T
-        else:
-            points = np.vstack([self.data_use['RA'], self.data_use['DEC']]).T
+        if self.data is None:
+            self.load()
+        points = np.vstack([self.data['RA'], self.data['DEC']]).T
 
         if len(points) <= n_samples:
             points_use = points
         else:
             points_use = np.asarray(random.choices(points, k=n_samples))
 
-        return shape.concave_hull(points_use, alpha=alpha)
+        self.obj_concave = shape.concave_hull(points_use, alpha=alpha)
+        return self.obj_concave
 
     @property
     def path(self):
