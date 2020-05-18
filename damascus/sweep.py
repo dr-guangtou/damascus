@@ -23,9 +23,10 @@ from matplotlib import path
 from astropy.io import fits
 
 from . import hsc
+from . import utils
 from . import shape
 
-__all__ = ['sweep_to_box', 'SweepCatalog']
+__all__ = ['sweep_to_box', 'sweep_bright_galaxy_match', 'SweepCatalog']
 
 
 def sweep_to_box(sweep_name):
@@ -56,6 +57,53 @@ def sweep_to_box(sweep_name):
     return np.vstack(
         [[ra_min, ra_max, ra_max, ra_min],
          [dec_min, dec_min, dec_max, dec_max]]).T
+
+
+def sweep_bright_galaxy_match(sweep_cat, mask=None, no_sup=True, no_rex=False,
+                              g_mag=24.0, r_mag=23.0, z_mag=23.0, verbose=True):
+    ''' Select bright extended sources in the Sweep catalog to match with HSC.
+    '''
+    # Read the Sweep catalog
+    assert os.path.isfile(sweep_cat), FileNotFoundError(
+        "Can not find catalog: {:s}".format(sweep_cat))
+    sweep_obj = SweepCatalog(sweep_cat, read_in=True)
+    if verbose:
+        print("\n# Dealing with Sweep catalog: {:s}".format(sweep_cat))
+
+    # Remove point sources
+    sweep_obj.select('TYPE', '!=', 'PSF', verbose=False)
+    # Remove SUP type object
+    if no_sup:
+        sweep_obj.select('TYPE', '!=', 'DUP', verbose=False)
+    # Remove barely resolved objects
+    if no_rex:
+        sweep_obj.select('TYPE', '!=', 'REX', verbose=False)
+
+    # Make flux cut in different bands
+    if g_mag is not None:
+        flux_g_lim = utils.mag_to_flux(g_mag, zeropoint=22.5)
+        sweep_obj.select('FLUX_G', '>=', flux_g_lim, verbose=False)
+    if r_mag is not None:
+        flux_r_lim = utils.mag_to_flux(r_mag, zeropoint=22.5)
+        sweep_obj.select('FLUX_R', '>=', flux_r_lim, verbose=False)
+    if z_mag is not None:
+        flux_z_lim = utils.mag_to_flux(z_mag, zeropoint=22.5)
+        sweep_obj.select('FLUX_Z', '>=', flux_z_lim, verbose=False)
+
+    if verbose:
+        print("There are {:d} objects left after the selection".format(len(sweep_obj.data_use)))
+
+    if mask is not None:
+        gal_match = sweep_obj.healpix_mask(mask, verbose=False)
+        if gal_match is not None:
+            if verbose:
+                print("There are {:d} objects matched".format(len(gal_match)))
+        else:
+            if verbose:
+                print("No matched object found!")
+        return gal_match
+    else:
+        return sweep_obj.data_use
 
 
 class SweepCatalog(object):
