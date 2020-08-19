@@ -19,6 +19,17 @@
     - e.g. `LEGACY_SURVEY_DIR=/global/cfs/cdirs/cosmo/work/legacysurvey/dr9k`
     - And there are other data directories that don't need to change.
 
+- `export PYTHONNOUSERSITE = 1` # Don't add ~/.local/ to Python's sys.path
+
+- Calculate the necessary memory:
+    - `ncores = 8`
+    - `maxmem = 134217728 # Cori/Haswell = 128 GB`
+    - `grep -q "Xeon Phi" /proc/cpuinfo && maxmem=100663296 # Cori/KNL = 98 GB`
+    - `let usemem=${maxmem}*${ncores}/32`
+
+- All the project specific environment parameters can be defined here too:
+    - Such as `HSC_DIR`, `HSC_DATA_DIR`.
+
 ## Shifter or Docker configuration
 
 - `legacysurvey` and `legacyhalos` docker:
@@ -94,6 +105,8 @@
 ## Wrapper to run the script or submit the job
 
 -
+
+-----
 
 ## Brief Note by Enia Xhakaj
 
