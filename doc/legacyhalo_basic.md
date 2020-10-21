@@ -1,5 +1,15 @@
 # Basic Tutorial About Using `legacyhalo`
 
+## Basic Procedure
+
+```
+legacyhsc-shifter
+[source the env file]
+legacyhsc-mpi --coadds --last 0 --debug --clobber --nproc 24
+legacyhsc-mpi --ellipse --last 0 --debug --nproc 24
+legacyhsc-mpi --htmlplots --last 0 --debug --clobber
+```
+
 ## Environment setup
 
 - Define the project: e.g., `project=manga`
@@ -123,3 +133,15 @@
         - This needs to be written for our project 
     - `manga.py`: 
         - (check the readme file) 
+
+## Q&A
+
+- Can I use my personal fork of `legacyhalos`?
+    - Yes, define it in the environment
+
+- How much update is required based on the current `legacyhsc` project?
+
+- Where should I put the output data? Personal space or project?
+
+- Do I need to estimate the maximum 
+
