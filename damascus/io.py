@@ -18,7 +18,7 @@ def read_healpix_fits(fits_file, nest=True):
 
 def find_files(loc, pattern, verbose=True):
     """Gather a list of pathes to all SWEEP catalogs."""
-    if loc[-1] is not '/':
+    if loc[-1] != '/':
         loc += '/'
 
     file_list = glob.glob(loc + pattern)

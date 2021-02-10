@@ -59,7 +59,7 @@ def sweep_to_box(sweep_name):
          [dec_min, dec_min, dec_max, dec_max]]).T
 
 
-def sweep_bright_galaxy_match(sweep_cat, mask=None, no_sup=True, no_rex=False,
+def sweep_bright_galaxy_match(sweep_cat, mask=None, no_dup=True, no_rex=False,
                               g_mag=24.0, r_mag=23.0, z_mag=23.0, verbose=True):
     ''' Select bright extended sources in the Sweep catalog to match with HSC.
     '''
@@ -73,7 +73,7 @@ def sweep_bright_galaxy_match(sweep_cat, mask=None, no_sup=True, no_rex=False,
     # Remove point sources
     sweep_obj.select('TYPE', '!=', 'PSF', verbose=False)
     # Remove SUP type object
-    if no_sup:
+    if no_dup:
         sweep_obj.select('TYPE', '!=', 'DUP', verbose=False)
     # Remove barely resolved objects
     if no_rex:
@@ -121,7 +121,7 @@ class SweepCatalog(object):
     -----
 
     '''
-    def __init__(self, catalog, read_in=False):
+    def __init__(self, catalog, read_in=False, suffix=None):
         '''Initialize a SweepCatalog object.
 
         Parameters
@@ -138,10 +138,15 @@ class SweepCatalog(object):
         '''
         self._catalog_path = catalog
         self._catalog_name = os.path.split(catalog)[-1]
+        if suffix is not None and isinstance(suffix, str):
+            self.sweep_name = self._catalog_name.replace(suffix, '')
+        else:
+            self.sweep_name = self._catalog_name
+
         assert os.path.isfile(catalog), FileNotFoundError("Cannot find the sweep catalog!")
 
         # Get the RA, Dec coordinates of the vertices
-        self._vertices = sweep_to_box(self._catalog_name)
+        self._vertices = sweep_to_box(self.sweep_name)
 
         # Open the FITS file
         self._hdu_list = self.open()
