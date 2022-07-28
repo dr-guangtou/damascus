@@ -5,8 +5,13 @@
   - Here the codes are mainly for preparing the sample and post-processing the `legacyhalos` outputs for scientific analysis. 
   - The `legacyhalos` pipeline will also provide us the cutout images of galaxies. `Damascus` will try to include codes to perform other photometric analysis on them.
 
+- Right now, this repo also includes codes and notebooks for carrying out DESi service tasks for:
+    1. The Bright Galaxies (BGS) working group.
+    2. The Cluster, Cross-Correlation, and Small-Scale Clustering (C3) working group.
+
 - This repo will also try to include photometric comparison of galaxies between HSC and LegacySurvey images.
   - Jia-Xuan Li (李嘉轩; Princeton) has worked extensively on this and has summarized the results in [this paper](https://ui.adsabs.harvard.edu/abs/2021arXiv211103557L/abstract). His [`Kuaizi`](https://github.com/AstroJacobLi/kuaizi) repo includes all the codes and scripts for the analysis. There will be some overlap.
+
 
 ## Useful links:
 
